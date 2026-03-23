@@ -1,0 +1,45 @@
+version: '3.9'
+
+services:
+  astrology-api:
+    build: .
+    container_name: astrology-api
+    ports:
+      - "12909:12909"
+    environment:
+      - LOG_LEVEL=INFO
+      - API_TITLE=Vedic Astrology API
+      - API_VERSION=1.0.0
+    volumes:
+      - ./ephemeris:/app/ephemeris:ro
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:12909/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # Optional: PostgreSQL for storing calculations
+  postgres:
+    image: postgres:15-alpine
+    container_name: astrology-db
+    environment:
+      POSTGRES_USER: astrology_user
+      POSTGRES_PASSWORD: astrology_password
+      POSTGRES_DB: astrology_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    profiles:
+      - with-db
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: astrology-network
